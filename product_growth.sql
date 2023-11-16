@@ -11,7 +11,7 @@ from
     events 
 where 
     date between 'start_date' and 'end_date'
-    and event_name in (activity_events_list) -- key events that define activeness
+    and event_name in (target_events) -- key events that define activeness
 group by 
     1
 ;
@@ -42,27 +42,27 @@ from
 
 -- Often you may want to compare rolling metrics instead of calendar-based metrics. 
 -- For example, instead of comparing comparing MAU between February and March you may
--- want to calculate 28-day rolling MAU and calculate MoM growth rate based on that. 
+-- want to calculate 30-day rolling MAU and calculate MoM growth rate based on that. 
 
 -- MoM growth rate of MAU 
 
 with rolling_mau as (
     select 
         e1.date, 
-        count(distinct e2.user_id) as rolling_mau_28_days 
+        count(distinct e2.user_id) as rolling_mau_30_days 
     from 
         events as e1 
-        left join events as e2 on e2.date > e1.date - interval '28 days'
+        left join events as e2 on e2.date > e1.date - interval '30 days'
     where 
-        event_name in (activity_events_list) -- key events that define activeness
+        event_name in (target_events) -- key events that define activeness
     group by 
         1
 )
 select 
     date, 
-    rolling_mau_28_days, 
-    lag(rolling_mau_28_days, 30) over (order by date) as rolling_mau_previous_month, 
-    100 * (rolling_mau_28_days / nullif(rolling_mau_previous_month, 0) - 1) as mom_rolling_mau_growth
+    rolling_mau_30_days, 
+    lag(rolling_mau_30_days, 30) over (order by date) as rolling_mau_previous_month, 
+    100 * (rolling_mau_30_days / nullif(rolling_mau_previous_month, 0) - 1) as mom_rolling_mau_growth
 from 
     rolling_mau
 ;
@@ -154,7 +154,7 @@ rolling_mau as (
         events as e1 
         left join events as e2 on e2.date > e1.date - interval '30 days'
     where 
-        event_name in (activity_events_list) -- key events that define activeness
+        event_name in (target_events) -- key events that define activeness
         and e1.date >= 'start_date'
     group by 
         1
